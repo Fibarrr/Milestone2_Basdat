@@ -273,9 +273,7 @@ emit("SET FOREIGN_KEY_CHECKS = 0;")
 emit()
 
 # 1) MASTER TABLES
-emit("-- ============================================================")
 emit("-- MASTER TABLES")
-emit("-- ============================================================")
 
 emit_insert(
     "ARENA",
@@ -292,9 +290,7 @@ emit_insert(
 )
 
 # 2) KLAN
-emit("-- ============================================================")
 emit(f"-- KLAN ({TOTAL_KLAN} rows)")
-emit("-- ============================================================")
 
 klan_rows = []
 klan_names_used = set()
@@ -371,9 +367,7 @@ emit_insert(
 )
 
 # 3) AKUN
-emit("-- ============================================================")
 emit(f"-- AKUN ({TOTAL_AKUN} rows)")
-emit("-- ============================================================")
 
 akun_rows = []
 usernames_used = set()
@@ -462,9 +456,7 @@ emit_insert(
 )
 
 # 4) DECK
-emit("-- ============================================================")
 emit("-- DECK (1-5 deck per akun)")
-emit("-- ============================================================")
 
 deck_rows = []
 for akun in akun_rows:
@@ -481,9 +473,7 @@ emit_insert(
 )
 
 # 5) KARTU + SUBTYPE
-emit("-- ============================================================")
 emit("-- KARTU + SUBTYPE")
-emit("-- ============================================================")
 
 emit_insert(
     "KARTU",
@@ -566,9 +556,7 @@ emit_insert(
 )
 
 # 6) KOLEKSI_KARTU
-emit("-- ============================================================")
 emit("-- KOLEKSI_KARTU")
-emit("-- ============================================================")
 
 koleksi_rows = []
 akun_koleksi = {}
@@ -599,9 +587,7 @@ emit_insert(
 )
 
 # 7) ISI_DECK
-emit("-- ============================================================")
 emit("-- ISI_DECK")
-emit("-- ============================================================")
 
 isi_deck_rows = []
 for akun_id, nomor_slot, _ in deck_rows:
@@ -620,9 +606,7 @@ emit_insert(
 )
 
 # 8) PERTARUNGAN
-emit("-- ============================================================")
 emit("-- PERTARUNGAN")
-emit("-- ============================================================")
 
 arena_members = {}
 for akun in akun_rows:
@@ -691,9 +675,7 @@ emit_insert(
 )
 
 # 9) CHAT + SUBTYPE
-emit("-- ============================================================")
 emit("-- CHAT + SUBTYPE")
-emit("-- ============================================================")
 
 chat_rows = []
 pesan_biasa_rows = []
@@ -775,7 +757,7 @@ emit_insert(
 
 emit("SET FOREIGN_KEY_CHECKS = 1;")
 emit()
-emit("-- ============================================================")
+emit("-- ")
 emit("-- SUMMARY")
 emit(f"-- ARENA             : {len(ARENAS)}")
 emit(f"-- RARITY_STATS      : {len(RARITY_STATS)}")
@@ -793,6 +775,6 @@ emit(f"-- CHAT              : {len(chat_rows)}")
 emit(f"-- PESAN_BIASA       : {len(pesan_biasa_rows)}")
 emit(f"-- PERMINTAAN_DONASI : {len(permintaan_donasi_rows)}")
 emit(f"-- BERBAGI_REPLAY    : {len(berbagi_replay_rows)}")
-emit("-- ============================================================")
+emit("-- ")
 
 print("\n".join(lines))
