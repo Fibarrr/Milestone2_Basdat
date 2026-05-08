@@ -11,16 +11,14 @@ import random
 from datetime import datetime, timedelta
 from faker import Faker
 
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate data dummy SQL yang sesuai Milestone2_CRS_The_Dementors_of_Snape.sql"
     )
-    parser.add_argument("--klan", type=int, default=250, help="Jumlah data KLAN.")
-    parser.add_argument("--akun", type=int, default=5000, help="Jumlah data AKUN.")
+    parser.add_argument("--klan", type=int, default=30, help="Jumlah data KLAN.")
+    parser.add_argument("--akun", type=int, default=150, help="Jumlah data AKUN.")
     parser.add_argument("--seed", type=int, default=42, help="Seed agar hasil reproducible.")
     return parser.parse_args()
-
 
 args = parse_args()
 TOTAL_KLAN = max(1, args.klan)
@@ -32,29 +30,23 @@ Faker.seed(SEED)
 fake.seed_instance(SEED)
 random.seed(SEED)
 
-
 def sql_str(value):
     if value is None:
         return "NULL"
     return "'" + str(value).replace("'", "''") + "'"
 
-
 def sql_num_or_null(value):
     return "NULL" if value is None else str(value)
-
 
 def rand_dt(start_year=2025, end_year=2026):
     start = datetime(start_year, 1, 1)
     end = datetime(end_year, 5, 1)
     return start + timedelta(seconds=random.randint(0, int((end - start).total_seconds())))
 
-
 lines = []
-
 
 def emit(text=""):
     lines.append(text)
-
 
 def emit_insert(table_name, columns, rows, value_formatter, chunk_size=1000):
     if not rows:
@@ -66,12 +58,14 @@ def emit_insert(table_name, columns, rows, value_formatter, chunk_size=1000):
         emit(",\n".join(values) + ";")
         emit()
 
+MIN_NON_FK_ROWS = 20
+MIN_ROWS_PER_FK = 50
+MIN_KARTU_ROWS = 100  
+MIN_PASUKAN_ROWS = 50
+MIN_SIHIR_ROWS = 50
+MIN_BANGUNAN_ROWS = 50
 
-# ============================================================
-# STATIC MASTER DATA
-# ============================================================
-
-ARENAS = [
+BASE_ARENAS = [
     (1, "Training Camp", 0),
     (2, "Goblin Stadium", 300),
     (3, "Bone Pit", 600),
@@ -86,18 +80,36 @@ ARENAS = [
     (12, "Electro Valley", 3800),
     (13, "Master Arena", 4200),
 ]
+ARENAS = list(BASE_ARENAS)
+next_arena_id = len(ARENAS) + 1
+next_piala = ARENAS[-1][2] + 300
+while len(ARENAS) < MIN_NON_FK_ROWS:
+    ARENAS.append((next_arena_id, f"Challenger Arena {next_arena_id}", next_piala))
+    next_arena_id += 1
+    next_piala += 300
+
 ARENA_BY_PIALA = {arena_id: piala for arena_id, _, piala in ARENAS}
 
-RARITY_STATS = [
+BASE_RARITY_STATS = [
     ("Common", 40, 2, 5),
     ("Rare", 10, 4, 50),
     ("Epic", 4, 10, 400),
     ("Legendary", 1, 20, 20000),
 ]
+RARITY_STATS = list(BASE_RARITY_STATS)
+for idx in range(1, MIN_NON_FK_ROWS - len(BASE_RARITY_STATS) + 1):
+    RARITY_STATS.append(
+        (
+            f"Special-{idx}",
+            random.randint(1, 40),
+            random.randint(2, 30),
+            random.randint(10, 50000),
+        )
+    )
 RARITY_MAX_DONASI = {r[0]: r[1] for r in RARITY_STATS}
 
 # (kartu_id, nama, tipe, damage, elixir, rarity, arena_id, deskripsi)
-KARTU_ROWS = [
+KARTU_BASE = [
     (1, "Knight", "Pasukan", 75, 3, "Common", 1, "Pasukan melee serbaguna."),
     (2, "Archer", "Pasukan", 60, 3, "Common", 1, "Dua pemanah jarak jauh."),
     (3, "Giant", "Pasukan", 120, 5, "Rare", 2, "Tank utama dengan HP besar."),
@@ -133,6 +145,66 @@ KARTU_ROWS = [
     (33, "X-Bow", "Bangunan", 70, 6, "Epic", 6, "Siege building."),
     (34, "Mortar", "Bangunan", 130, 4, "Common", 2, "Long range siege."),
 ]
+KARTU_ROWS = list(KARTU_BASE)
+base_rarity_names = [r[0] for r in BASE_RARITY_STATS]
+arena_ids = [a[0] for a in ARENAS]
+extra_name_pool = [
+    "Guardian",
+    "Ranger",
+    "Crusher",
+    "Sentinel",
+    "Phantom",
+    "Blaster",
+    "Lancer",
+    "Invoker",
+    "Fury",
+    "Drifter",
+]
+
+def count_by_type(rows, tipe):
+    return sum(1 for row in rows if row[2] == tipe)
+
+next_kartu_id = max(k[0] for k in KARTU_ROWS) + 1
+while (
+    len(KARTU_ROWS) < MIN_KARTU_ROWS
+    or count_by_type(KARTU_ROWS, "Pasukan") < MIN_PASUKAN_ROWS
+    or count_by_type(KARTU_ROWS, "Sihir") < MIN_SIHIR_ROWS
+    or count_by_type(KARTU_ROWS, "Bangunan") < MIN_BANGUNAN_ROWS
+):
+    if count_by_type(KARTU_ROWS, "Pasukan") < MIN_PASUKAN_ROWS:
+        tipe = "Pasukan"
+        dmg_min, dmg_max = 45, 260
+        elixir_min, elixir_max = 2, 7
+    elif count_by_type(KARTU_ROWS, "Sihir") < MIN_SIHIR_ROWS:
+        tipe = "Sihir"
+        dmg_min, dmg_max = 0, 820
+        elixir_min, elixir_max = 2, 7
+    elif count_by_type(KARTU_ROWS, "Bangunan") < MIN_BANGUNAN_ROWS:
+        tipe = "Bangunan"
+        dmg_min, dmg_max = 50, 180
+        elixir_min, elixir_max = 3, 7
+    else:
+        tipe = random.choice(["Pasukan", "Sihir", "Bangunan"])
+        dmg_min, dmg_max = 40, 300
+        elixir_min, elixir_max = 2, 7
+
+    name_seed = random.choice(extra_name_pool)
+    nama = f"{tipe} {name_seed} {next_kartu_id}"
+    deskripsi = f"Kartu {tipe.lower()} hasil generate Faker #{next_kartu_id}."
+    KARTU_ROWS.append(
+        (
+            next_kartu_id,
+            nama,
+            tipe,
+            random.randint(dmg_min, dmg_max),
+            random.randint(elixir_min, elixir_max),
+            random.choice(base_rarity_names),
+            random.choice(arena_ids),
+            deskripsi,
+        )
+    )
+    next_kartu_id += 1
+
 KARTU_IDS = [k[0] for k in KARTU_ROWS]
 KARTU_BY_ID = {k[0]: k for k in KARTU_ROWS}
 
@@ -188,7 +260,6 @@ PESAN_TEMPLATES = [
     "Ada turnamen internal besok, siap?",
 ]
 
-
 def max_arena_for_piala(piala):
     best = 1
     for arena_id, _, piala_min in ARENAS:
@@ -196,11 +267,7 @@ def max_arena_for_piala(piala):
             best = arena_id
     return best
 
-
-# ============================================================
-# BUILD DATA
-# ============================================================
-
+# build data
 emit("USE clash_tabola_bale;")
 emit("SET FOREIGN_KEY_CHECKS = 0;")
 emit()
@@ -358,7 +425,6 @@ for akun_id in range(6, TOTAL_AKUN + 1):
         }
     )
 
-# Role per klan (minimal 1 Pemimpin jika klan punya anggota)
 klan_members = {}
 for akun in akun_rows:
     if akun["klan_id"] is not None:
