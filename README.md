@@ -29,10 +29,23 @@ mysql -u root -p -e "DROP DATABASE clash_tabola_bale;"
 python seed.py > seed_data.sql
 
  3. Import schema
-mysql -u root -p < Milestone2_CRS_The_Dementors_of_Snape.sql
+mysql -u root -p < Milestone2_CRS_The_Dementors.sql
 
  4. Import data
 mysql -u root -p < seed_data.sql
 
 5. Buka Mariadb (kalau tidak automatis)
 mysql -u root -p
+
+
+######
+
+File Milestone + Seed
+
+mysql -u root -p < Milestone2_CRS_TheDementorsOfSnape.sql
+
+mysql -u root -p -e "USE clash_tabola_bale; SHOW TABLES;"
+
+mysql -u root -p
+
+USE clash_tabola_bale;
