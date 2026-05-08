@@ -1,5 +1,3 @@
-
-
 SET FOREIGN_KEY_CHECKS = 0;
 DROP DATABASE IF EXISTS clash_tabola_bale;
 CREATE DATABASE clash_tabola_bale
@@ -8,220 +6,168 @@ CREATE DATABASE clash_tabola_bale
 USE clash_tabola_bale;
 SET FOREIGN_KEY_CHECKS = 1;
 
--- TABEL INDEPENDEN 
-
-CREATE TABLE Arena (
-    arena_id    INT             NOT NULL AUTO_INCREMENT,
-    nama_arena  VARCHAR(100)    NOT NULL,
-    piala_dibutuhkan INT        NOT NULL DEFAULT 0,
-    PRIMARY KEY (arena_id)
+-- 1. TABEL MASTER (Dibuat paling awal karena tidak punya Foreign Key)
+CREATE TABLE ARENA (
+    arena_id INT PRIMARY KEY,
+    nama_arena VARCHAR(50) NOT NULL,
+    piala_dibutuhkan INT NOT NULL
 );
 
-CREATE TABLE Rarity_stats (
-    rarity              VARCHAR(50)     NOT NULL,
-    max_terima_donasi   INT             NOT NULL,
-    required_cards      INT             NOT NULL,
-    required_gold       INT             NOT NULL,
-    PRIMARY KEY (rarity)
+CREATE TABLE RARITY_STATS (
+    rarity VARCHAR(20) PRIMARY KEY,
+    max_terima_donasi INT NOT NULL,
+    required_cards INT NOT NULL,
+    required_gold INT NOT NULL
 );
 
-CREATE TABLE Klan (
-    klan_id         INT             NOT NULL AUTO_INCREMENT,
-    nama_klan       VARCHAR(100)    NOT NULL,
-    negara_asal_klan VARCHAR(100)   NOT NULL,
-    piala_minimal   INT             NOT NULL DEFAULT 0,
-    deskripsi       TEXT,
-    tipe_klan       ENUM('Terbuka','Hanya Undangan','Tertutup') NOT NULL DEFAULT 'Terbuka',
-    jumlah_anggota  INT             NOT NULL DEFAULT 0,
-    PRIMARY KEY (klan_id)
+CREATE TABLE KLAN (
+    klan_id INT PRIMARY KEY,
+    nama_klan VARCHAR(50) NOT NULL,
+    negara_asal_klan VARCHAR(50),
+    piala_dibutuhkan INT NOT NULL,
+    deskripsi TEXT,
+    tipe_klan VARCHAR(20)
 );
 
-CREATE TABLE Kartu (
-    kartu_id    INT             NOT NULL AUTO_INCREMENT,
-    nama        VARCHAR(100)    NOT NULL,
-    deskripsi   TEXT,
-    tipe        ENUM('Pasukan','Sihir','Bangunan') NOT NULL,
-    damage      INT             NOT NULL DEFAULT 0,
-    elixir      INT             NOT NULL,
-    rarity      VARCHAR(50)     NOT NULL,
-    arena_id    INT             NOT NULL,
-    PRIMARY KEY (kartu_id),
-    CONSTRAINT fk_kartu_rarity  FOREIGN KEY (rarity)   REFERENCES Rarity_stats(rarity),
-    CONSTRAINT fk_kartu_arena   FOREIGN KEY (arena_id)  REFERENCES Arena(arena_id)
+-- 2. TABEL ENTITAS INTI
+CREATE TABLE AKUN (
+    akun_id INT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    kata_sandi VARCHAR(255) NOT NULL,
+    jumlah_emas INT DEFAULT 0,
+    jumlah_piala INT DEFAULT 0,
+    role VARCHAR(20),
+    waktu_bergabung DATETIME,
+    klan_id INT,
+    FOREIGN KEY (klan_id) REFERENCES KLAN(klan_id) ON DELETE SET NULL
 );
 
--- Sub-type Pasukan (disjoint ISA dari Kartu)
-CREATE TABLE Pasukan (
-    kartu_id            INT             NOT NULL,
-    health_pasukan      INT             NOT NULL,
-    target_serangan     ENUM('Udara','Darat','Semua') NOT NULL DEFAULT 'Semua',
-    jarak_serangan      DECIMAL(5,2)    NOT NULL,
-    kecepatan_gerak     DECIMAL(5,2)    NOT NULL,
-    kecepatan_menyerang DECIMAL(5,2)    NOT NULL,
-    tipe_pasukan        ENUM('Udara','Darat') NOT NULL,
-    PRIMARY KEY (kartu_id),
-    CONSTRAINT fk_pasukan_kartu FOREIGN KEY (kartu_id) REFERENCES Kartu(kartu_id) ON DELETE CASCADE
+-- DECK (Weak Entity milik Akun) -> ON DELETE CASCADE
+CREATE TABLE DECK (
+    akun_id INT,
+    nomor_slot INT,
+    status_aktif BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (akun_id, nomor_slot),
+    FOREIGN KEY (akun_id) REFERENCES AKUN(akun_id) ON DELETE CASCADE
 );
 
--- Sub-type Sihir (disjoint ISA dari Kartu)
-CREATE TABLE Sihir (
-    kartu_id            INT             NOT NULL,
-    radius_serangan     DECIMAL(5,2)    NOT NULL,
-    PRIMARY KEY (kartu_id),
-    CONSTRAINT fk_sihir_kartu   FOREIGN KEY (kartu_id) REFERENCES Kartu(kartu_id) ON DELETE CASCADE
+CREATE TABLE KARTU (
+    kartu_id INT PRIMARY KEY,
+    nama VARCHAR(50) NOT NULL,
+    deskripsi TEXT,
+    tipe VARCHAR(20) NOT NULL,
+    damage INT,
+    elixir INT NOT NULL,
+    rarity VARCHAR(20),
+    arena_id INT,
+    FOREIGN KEY (rarity) REFERENCES RARITY_STATS(rarity),
+    FOREIGN KEY (arena_id) REFERENCES ARENA(arena_id)
 );
 
--- Sub-type Bangunan (disjoint ISA dari Kartu)
-CREATE TABLE Bangunan (
-    kartu_id            INT             NOT NULL,
-    health_bangunan     INT             NOT NULL,
-    target_serangan     ENUM('Udara','Darat','Semua') NOT NULL DEFAULT 'Semua',
-    lifetime            INT             NOT NULL COMMENT 'dalam detik',
-    jarak_serangan      DECIMAL(5,2)    NOT NULL,
-    kecepatan_menyerang DECIMAL(5,2)    NOT NULL,
-    PRIMARY KEY (kartu_id),
-    CONSTRAINT fk_bangunan_kartu FOREIGN KEY (kartu_id) REFERENCES Kartu(kartu_id) ON DELETE CASCADE
+-- 3. TABEL SUB-TYPE KARTU
+CREATE TABLE PASUKAN (
+    kartu_id INT PRIMARY KEY,
+    health INT,
+    target_serangan VARCHAR(30),
+    jarak_serangan DECIMAL(5,2),
+    kecepatan_gerak VARCHAR(20),
+    kecepatan_menyerang DECIMAL(5,2),
+    tipe_pasukan VARCHAR(30),
+    FOREIGN KEY (kartu_id) REFERENCES KARTU(kartu_id) ON DELETE CASCADE
 );
 
-
--- TABEL AKUN
-
-CREATE TABLE Akun (
-    akun_id         INT             NOT NULL AUTO_INCREMENT,
-    username        VARCHAR(100)    NOT NULL UNIQUE,
-    kata_sandi      VARCHAR(255)    NOT NULL,
-    jumlah_emas     INT             NOT NULL DEFAULT 0,
-    jumlah_piala    INT             NOT NULL DEFAULT 0,
-    klan_id         INT             NULL COMMENT 'NULL jika belum bergabung klan',
-    PRIMARY KEY (akun_id),
-    CONSTRAINT fk_akun_klan FOREIGN KEY (klan_id) REFERENCES Klan(klan_id) ON DELETE SET NULL
+CREATE TABLE SIHIR (
+    kartu_id INT PRIMARY KEY,
+    radius_serangan DECIMAL(5,2),
+    FOREIGN KEY (kartu_id) REFERENCES KARTU(kartu_id) ON DELETE CASCADE
 );
 
--- Relasi Anggota (Akun-Klan) — atribut role dan waktu_bergabung
-CREATE TABLE Anggota (
-    akun_id         INT             NOT NULL,
-    klan_id         INT             NOT NULL,
-    role            ENUM('Anggota','Penatua','Wakil Pemimpin','Pemimpin') NOT NULL DEFAULT 'Anggota',
-    waktu_bergabung DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (akun_id, klan_id),
-    CONSTRAINT fk_anggota_akun  FOREIGN KEY (akun_id)  REFERENCES Akun(akun_id)  ON DELETE CASCADE,
-    CONSTRAINT fk_anggota_klan  FOREIGN KEY (klan_id)  REFERENCES Klan(klan_id)  ON DELETE CASCADE
+CREATE TABLE BANGUNAN (
+    kartu_id INT PRIMARY KEY,
+    health INT,
+    target_serangan VARCHAR(30),
+    lifetime INT,
+    jarak_serangan DECIMAL(5,2),
+    kecepatan_menyerang DECIMAL(5,2),
+    FOREIGN KEY (kartu_id) REFERENCES KARTU(kartu_id) ON DELETE CASCADE
 );
 
-
--- TABEL DECK (Weak Entity — bergantung pada Akun)
-
-CREATE TABLE Deck (
-    nomor_slot      INT             NOT NULL COMMENT 'Partial key: 1-5',
-    akun_id         INT             NOT NULL,
-    status_aktif    BOOLEAN         NOT NULL DEFAULT FALSE,
-    PRIMARY KEY (nomor_slot, akun_id),
-    CONSTRAINT fk_deck_akun FOREIGN KEY (akun_id) REFERENCES Akun(akun_id) ON DELETE CASCADE
-);
-
-
--- RELASI KOLEKSI (Akun - Kartu) M:N
-
-CREATE TABLE Koleksi (
-    akun_id         INT             NOT NULL,
-    kartu_id        INT             NOT NULL,
-    level_kartu     INT             NOT NULL DEFAULT 1,
-    jumlah_kartu    INT             NOT NULL DEFAULT 1,
+-- 4. TABEL PERSIMPANGAN (M:N & TRANSAKSI)
+CREATE TABLE KOLEKSI_KARTU (
+    akun_id INT,
+    kartu_id INT,
+    level_kartu INT DEFAULT 1,
+    jumlah_kartu INT DEFAULT 0,
     PRIMARY KEY (akun_id, kartu_id),
-    CONSTRAINT fk_koleksi_akun  FOREIGN KEY (akun_id)  REFERENCES Akun(akun_id)  ON DELETE CASCADE,
-    CONSTRAINT fk_koleksi_kartu FOREIGN KEY (kartu_id) REFERENCES Kartu(kartu_id) ON DELETE CASCADE
+    FOREIGN KEY (akun_id) REFERENCES AKUN(akun_id) ON DELETE CASCADE,
+    FOREIGN KEY (kartu_id) REFERENCES KARTU(kartu_id) ON DELETE CASCADE
 );
 
--- RELASI BERISI (Deck - Kartu) M:N
-
-CREATE TABLE Berisi (
-    nomor_slot      INT             NOT NULL,
-    akun_id         INT             NOT NULL,
-    kartu_id        INT             NOT NULL,
-    PRIMARY KEY (nomor_slot, akun_id, kartu_id),
-    CONSTRAINT fk_berisi_deck   FOREIGN KEY (nomor_slot, akun_id) REFERENCES Deck(nomor_slot, akun_id) ON DELETE CASCADE,
-    CONSTRAINT fk_berisi_kartu  FOREIGN KEY (kartu_id)            REFERENCES Kartu(kartu_id)           ON DELETE CASCADE
+CREATE TABLE ISI_DECK (
+    akun_id INT,
+    nomor_slot INT,
+    kartu_id INT,
+    PRIMARY KEY (akun_id, nomor_slot, kartu_id),
+    FOREIGN KEY (akun_id, nomor_slot) REFERENCES DECK(akun_id, nomor_slot) ON DELETE CASCADE,
+    FOREIGN KEY (kartu_id) REFERENCES KARTU(kartu_id) ON DELETE CASCADE
 );
 
-
--- TABEL PERTARUNGAN (N-ary: Player1, Player2, Pemenang, Arena)
--- arena_id langsung disini
-
-CREATE TABLE Pertarungan (
-    pertarungan_id      INT             NOT NULL AUTO_INCREMENT,
-    waktu_pertarungan   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    replay_path         VARCHAR(500)    NULL,
-    arena_id            INT             NOT NULL,
-    akun_id_player1     INT             NOT NULL,
-    akun_id_player2     INT             NOT NULL,
-    akun_id_pemenang    INT             NULL COMMENT 'NULL jika seri',
-    PRIMARY KEY (pertarungan_id),
-    CONSTRAINT fk_pert_arena    FOREIGN KEY (arena_id)          REFERENCES Arena(arena_id),
-    CONSTRAINT fk_pert_p1       FOREIGN KEY (akun_id_player1)   REFERENCES Akun(akun_id),
-    CONSTRAINT fk_pert_p2       FOREIGN KEY (akun_id_player2)   REFERENCES Akun(akun_id),
-    CONSTRAINT fk_pert_winner   FOREIGN KEY (akun_id_pemenang)  REFERENCES Akun(akun_id)
+-- Revisi Partisipasi Pertarungan di Arena
+CREATE TABLE PERTARUNGAN (
+    pertarungan_id INT PRIMARY KEY,
+    tahun INT NOT NULL,
+    bulan INT NOT NULL,
+    tanggal INT NOT NULL,
+    jam INT NOT NULL,
+    menit INT NOT NULL,
+    replay_path VARCHAR(255),
+    akun_pemain_1 INT NOT NULL,
+    akun_pemain_2 INT NOT NULL,
+    id_pemenang INT,
+    arena_id INT NOT NULL,
+    FOREIGN KEY (akun_pemain_1) REFERENCES AKUN(akun_id),
+    FOREIGN KEY (akun_pemain_2) REFERENCES AKUN(akun_id),
+    FOREIGN KEY (id_pemenang) REFERENCES AKUN(akun_id),
+    FOREIGN KEY (arena_id) REFERENCES ARENA(arena_id)
 );
 
-
--- TABEL CHAT (Weak Entity — agregat Anggota/Akun-Klan)
--- terhubung ke agregat Akun-Klan (akun_id + klan_id)
-
-CREATE TABLE Chat (
-    urutan_chat     INT             NOT NULL COMMENT 'Partial key, sekuensial per klan',
-    klan_id         INT             NOT NULL,
-    akun_id         INT             NOT NULL COMMENT 'Pengirim (harus anggota klan)',
-    waktu_pengiriman DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (urutan_chat, klan_id),
-    CONSTRAINT fk_chat_klan     FOREIGN KEY (klan_id)           REFERENCES Klan(klan_id)  ON DELETE CASCADE,
-    CONSTRAINT fk_chat_anggota  FOREIGN KEY (akun_id, klan_id)  REFERENCES Anggota(akun_id, klan_id) ON DELETE CASCADE
+-- 5. TABEL CHAT (Agregasi) & SUB-TYPENYA
+CREATE TABLE CHAT (
+    klan_id INT,
+    urutan_chat INT,
+    tanggal_pengiriman INT,
+    jam_pengiriman INT,
+    menit_pengiriman INT,
+    akun_pengirim_id INT NOT NULL,
+    PRIMARY KEY (klan_id, urutan_chat),
+    FOREIGN KEY (klan_id) REFERENCES KLAN(klan_id) ON DELETE CASCADE,
+    FOREIGN KEY (akun_pengirim_id) REFERENCES AKUN(akun_id) ON DELETE CASCADE
 );
 
--- Sub-type Pesan Biasa (disjoint ISA dari Chat)
-CREATE TABLE Pesan_Biasa (
-    urutan_chat     INT             NOT NULL,
-    klan_id         INT             NOT NULL,
-    teks_pesan      TEXT            NOT NULL,
-    PRIMARY KEY (urutan_chat, klan_id),
-    CONSTRAINT fk_pb_chat FOREIGN KEY (urutan_chat, klan_id) REFERENCES Chat(urutan_chat, klan_id) ON DELETE CASCADE
+CREATE TABLE PESAN_BIASA (
+    klan_id INT,
+    urutan_chat INT,
+    teks_pesan TEXT NOT NULL,
+    PRIMARY KEY (klan_id, urutan_chat),
+    FOREIGN KEY (klan_id, urutan_chat) REFERENCES CHAT(klan_id, urutan_chat) ON DELETE CASCADE
 );
 
--- Sub-type Permintaan Donasi (disjoint ISA dari Chat)
-CREATE TABLE Permintaan_Donasi (
-    urutan_chat         INT             NOT NULL,
-    klan_id             INT             NOT NULL,
-    kartu_id            INT             NOT NULL COMMENT 'Kartu yang diminta',
-    jumlah_kartu_diterima INT           NOT NULL DEFAULT 0,
-    PRIMARY KEY (urutan_chat, klan_id),
-    CONSTRAINT fk_pd_chat   FOREIGN KEY (urutan_chat, klan_id) REFERENCES Chat(urutan_chat, klan_id) ON DELETE CASCADE,
-    CONSTRAINT fk_pd_kartu  FOREIGN KEY (kartu_id)             REFERENCES Kartu(kartu_id)
+CREATE TABLE PERMINTAAN_DONASI (
+    klan_id INT,
+    urutan_chat INT,
+    jumlah_kartu_diterima INT DEFAULT 0,
+    kartu_id INT NOT NULL,
+    PRIMARY KEY (klan_id, urutan_chat),
+    FOREIGN KEY (klan_id, urutan_chat) REFERENCES CHAT(klan_id, urutan_chat) ON DELETE CASCADE,
+    FOREIGN KEY (kartu_id) REFERENCES KARTU(kartu_id) ON DELETE CASCADE
 );
 
--- Sub-type Berbagi Replay (disjoint ISA dari Chat)
--- Total participation ke Pertarungan (NOT NULL)
-CREATE TABLE Berbagi_Replay (
-    urutan_chat         INT             NOT NULL,
-    klan_id             INT             NOT NULL,
-    pertarungan_id      INT             NOT NULL COMMENT 'Total participation — wajib ada',
-    deskripsi_tambahan  TEXT            NULL,
-    PRIMARY KEY (urutan_chat, klan_id),
-    CONSTRAINT fk_br_chat   FOREIGN KEY (urutan_chat, klan_id) REFERENCES Chat(urutan_chat, klan_id) ON DELETE CASCADE,
-    CONSTRAINT fk_br_pert   FOREIGN KEY (pertarungan_id)       REFERENCES Pertarungan(pertarungan_id)
+CREATE TABLE BERBAGI_REPLAY (
+    klan_id INT,
+    urutan_chat INT,
+    deskripsi_tambahan TEXT,
+    pertarungan_id INT NOT NULL,
+    PRIMARY KEY (klan_id, urutan_chat),
+    FOREIGN KEY (klan_id, urutan_chat) REFERENCES CHAT(klan_id, urutan_chat) ON DELETE CASCADE,
+    FOREIGN KEY (pertarungan_id) REFERENCES PERTARUNGAN(pertarungan_id) ON DELETE CASCADE
 );
-
-
-
--- VIEWS
-
-
-CREATE OR REPLACE VIEW v_akun_arena AS
-SELECT a.akun_id, a.username, a.jumlah_piala,
-       ar.arena_id, ar.nama_arena
-FROM Akun a
-JOIN Arena ar ON a.jumlah_piala >= ar.piala_dibutuhkan
-WHERE ar.arena_id = (
-    SELECT MAX(ar2.arena_id)
-    FROM Arena ar2
-    WHERE a.jumlah_piala >= ar2.piala_dibutuhkan
-);
-
--- data di-seed via seed.py / seed_data.sql
