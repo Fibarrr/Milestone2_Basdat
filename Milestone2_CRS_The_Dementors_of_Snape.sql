@@ -42,7 +42,7 @@ CREATE TABLE Kartu (
     deskripsi   TEXT,
     tipe        ENUM('Pasukan','Sihir','Bangunan') NOT NULL,
     damage      INT             NOT NULL DEFAULT 0,
-    elixir      INT             NOT NULL,
+    elixir      INT             NOT NULL CHECK (elixir BETWEEN 1 AND 10),
     rarity      VARCHAR(50)     NOT NULL,
     arena_id    INT             NOT NULL,
     PRIMARY KEY (kartu_id),
@@ -93,26 +93,20 @@ CREATE TABLE Akun (
     jumlah_emas     INT             NOT NULL DEFAULT 0,
     jumlah_piala    INT             NOT NULL DEFAULT 0,
     klan_id         INT             NULL COMMENT 'NULL jika belum bergabung klan',
+    role            ENUM('Anggota','Penatua','Wakil Pemimpin','Pemimpin') DEFAULT 'Anggota',
+    waktu_bergabung DATETIME        NULL,
     PRIMARY KEY (akun_id),
     CONSTRAINT fk_akun_klan FOREIGN KEY (klan_id) REFERENCES Klan(klan_id) ON DELETE SET NULL
 );
 
 -- Relasi Anggota (Akun-Klan) — atribut role dan waktu_bergabung
-CREATE TABLE Anggota (
-    akun_id         INT             NOT NULL,
-    klan_id         INT             NOT NULL,
-    role            ENUM('Anggota','Penatua','Wakil Pemimpin','Pemimpin') NOT NULL DEFAULT 'Anggota',
-    waktu_bergabung DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (akun_id, klan_id),
-    CONSTRAINT fk_anggota_akun  FOREIGN KEY (akun_id)  REFERENCES Akun(akun_id)  ON DELETE CASCADE,
-    CONSTRAINT fk_anggota_klan  FOREIGN KEY (klan_id)  REFERENCES Klan(klan_id)  ON DELETE CASCADE
-);
+
 
 
 -- TABEL DECK (Weak Entity — bergantung pada Akun)
 
 CREATE TABLE Deck (
-    nomor_slot      INT             NOT NULL COMMENT 'Partial key: 1-5',
+    nomor_slot      INT             NOT NULL CHECK (nomor_slot BETWEEN 1 AND 5),
     akun_id         INT             NOT NULL,
     status_aktif    BOOLEAN         NOT NULL DEFAULT FALSE,
     PRIMARY KEY (nomor_slot, akun_id),
@@ -154,6 +148,8 @@ CREATE TABLE Pertarungan (
     arena_id            INT             NOT NULL,
     akun_id_player1     INT             NOT NULL,
     akun_id_player2     INT             NOT NULL,
+    deck_slot_player1   INT             NOT NULL COMMENT 'Slot deck akun 1',
+    deck_slot_player2   INT             NOT NULL COMMENT 'Slot deck akun 2',
     akun_id_pemenang    INT             NULL COMMENT 'NULL jika seri',
     PRIMARY KEY (pertarungan_id),
     CONSTRAINT fk_pert_arena    FOREIGN KEY (arena_id)          REFERENCES Arena(arena_id),
@@ -167,13 +163,14 @@ CREATE TABLE Pertarungan (
 -- terhubung ke agregat Akun-Klan (akun_id + klan_id)
 
 CREATE TABLE Chat (
-    urutan_chat     INT             NOT NULL COMMENT 'Partial key, sekuensial per klan',
+    urutan_chat     INT             NOT NULL,
     klan_id         INT             NOT NULL,
-    akun_id         INT             NOT NULL COMMENT 'Pengirim (harus anggota klan)',
+    akun_id         INT             NOT NULL,
     waktu_pengiriman DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (urutan_chat, klan_id),
     CONSTRAINT fk_chat_klan     FOREIGN KEY (klan_id)           REFERENCES Klan(klan_id)  ON DELETE CASCADE,
-    CONSTRAINT fk_chat_anggota  FOREIGN KEY (akun_id, klan_id)  REFERENCES Anggota(akun_id, klan_id) ON DELETE CASCADE
+    -- Sekarang merujuk langsung ke Akun karena data role & klan sudah ada di sana
+    CONSTRAINT fk_chat_akun     FOREIGN KEY (akun_id)           REFERENCES Akun(akun_id) ON DELETE CASCADE
 );
 
 -- Sub-type Pesan Biasa (disjoint ISA dari Chat)
