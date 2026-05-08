@@ -95,7 +95,9 @@ KARTU_FIXED = [
 KARTU_IDS      = [k[0] for k in KARTU_FIXED]
 KARTU_ARENA    = {k[0]: k[6] for k in KARTU_FIXED}  # kartu_id -> arena_id yg dibutuhkan
 
-
+emit("USE clash_tabola_bale;")
+emit("SET FOREIGN_KEY_CHECKS = 0;")
+emit()
 emit("-- ============================================================")
 emit("-- KLAN (Test 50 rows)")
 emit("-- ============================================================")
