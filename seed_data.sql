@@ -1,9 +1,7 @@
 USE clash_tabola_bale;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- ============================================================
 -- MASTER TABLES
--- ============================================================
 INSERT INTO ARENA (arena_id, nama_arena, piala_dibutuhkan) VALUES
   (1, 'Training Camp', 0),
   (2, 'Goblin Stadium', 300),
@@ -48,9 +46,7 @@ INSERT INTO RARITY_STATS (rarity, max_terima_donasi, required_cards, required_go
   ('Special-15', 7, 13, 22551),
   ('Special-16', 39, 10, 2857);
 
--- ============================================================
 -- KLAN (30 rows)
--- ============================================================
 INSERT INTO KLAN (klan_id, nama_klan, negara_asal_klan, piala_dibutuhkan, deskripsi, tipe_klan) VALUES
   (1, 'Iron Empire', 'Brasil', 300, 'Ad eius dolore qui perspiciatis.', 'Hanya Undangan'),
   (2, 'Iron Clash', 'Argentina', 1000, 'Assumenda in adipisci dolor magnam ad dicta officiis molestias dolore.', 'Hanya Undangan'),
@@ -83,9 +79,7 @@ INSERT INTO KLAN (klan_id, nama_klan, negara_asal_klan, piala_dibutuhkan, deskri
   (29, 'Iron Guild', 'Nigeria', 300, 'Itaque ut vel ab numquam natus aut.', 'Hanya Undangan'),
   (30, 'Blazing Tigers', 'Vietnam', 0, 'Distinctio eaque ut sunt sunt fuga culpa rerum provident nostrum.', 'Terbuka');
 
--- ============================================================
 -- AKUN (150 rows)
--- ============================================================
 INSERT INTO AKUN (akun_id, username, kata_sandi, jumlah_emas, jumlah_piala, role, waktu_bergabung, klan_id) VALUES
   (1, 'rainaldi', '$2b$10$hashed_fixed', 8644, 3200, 'Anggota', '2025-04-16 23:48:32', 1),
   (2, 'jonathan_ab', '$2b$10$hashed_fixed', 2697, 2800, 'Pemimpin', '2025-01-20 13:13:46', 1),
@@ -238,9 +232,7 @@ INSERT INTO AKUN (akun_id, username, kata_sandi, jumlah_emas, jumlah_piala, role
   (149, 'ysiregar911', '$2b$10$c96060a209183153424bdb', 12669, 925, NULL, '2025-06-10 16:12:05', NULL),
   (150, 'suryonolembah509', '$2b$10$7c22aa4cff978d9a29b349', 17015, 1988, 'Anggota', '2025-02-18 08:04:05', 24);
 
--- ============================================================
 -- DECK (1-5 deck per akun)
--- ============================================================
 INSERT INTO DECK (akun_id, nomor_slot, status_aktif) VALUES
   (1, 1, 1),
   (2, 1, 1),
@@ -740,9 +732,7 @@ INSERT INTO DECK (akun_id, nomor_slot, status_aktif) VALUES
   (149, 3, 0),
   (150, 1, 1);
 
--- ============================================================
 -- KARTU + SUBTYPE
--- ============================================================
 INSERT INTO KARTU (kartu_id, nama, deskripsi, tipe, damage, elixir, rarity, arena_id) VALUES
   (1, 'Knight', 'Pasukan melee serbaguna.', 'Pasukan', 75, 3, 'Common', 1),
   (2, 'Archer', 'Dua pemanah jarak jauh.', 'Pasukan', 60, 3, 'Common', 1),
@@ -1051,9 +1041,7 @@ INSERT INTO BANGUNAN (kartu_id, health, target_serangan, lifetime, jarak_seranga
   (149, 702, 'Udara', 63, 7.31, 1.32),
   (150, 2475, 'Semua', 51, 7.89, 1.83);
 
--- ============================================================
 -- KOLEKSI_KARTU
--- ============================================================
 INSERT INTO KOLEKSI_KARTU (akun_id, kartu_id, level_kartu, jumlah_kartu) VALUES
   (1, 138, 2, 11),
   (1, 101, 2, 265),
@@ -3379,9 +3367,7 @@ INSERT INTO KOLEKSI_KARTU (akun_id, kartu_id, level_kartu, jumlah_kartu) VALUES
   (150, 6, 3, 73),
   (150, 25, 4, 40);
 
--- ============================================================
 -- ISI_DECK
--- ============================================================
 INSERT INTO ISI_DECK (akun_id, nomor_slot, kartu_id) VALUES
   (1, 1, 138),
   (1, 1, 101),
@@ -7366,9 +7352,7 @@ INSERT INTO ISI_DECK (akun_id, nomor_slot, kartu_id) VALUES
   (150, 1, 10),
   (150, 1, 105);
 
--- ============================================================
 -- PERTARUNGAN
--- ============================================================
 INSERT INTO PERTARUNGAN (pertarungan_id, tahun, bulan, tanggal, jam, menit, replay_path, akun_pemain_1, akun_pemain_2, id_pemenang, arena_id) VALUES
   (1, 2025, 8, 23, 12, 31, '/replays/r000001.mp4', 111, 64, 111, 10),
   (2, 2025, 5, 20, 17, 7, '/replays/r000002.mp4', 88, 10, 88, 10),
@@ -7695,9 +7679,7 @@ INSERT INTO PERTARUNGAN (pertarungan_id, tahun, bulan, tanggal, jam, menit, repl
   (323, 2026, 1, 30, 3, 37, '/replays/r000323.mp4', 76, 115, NULL, 16),
   (324, 2026, 4, 15, 5, 5, '/replays/r000324.mp4', 115, 76, 115, 16);
 
--- ============================================================
 -- CHAT + SUBTYPE
--- ============================================================
 INSERT INTO CHAT (klan_id, urutan_chat, tanggal_pengiriman, jam_pengiriman, menit_pengiriman, akun_pengirim_id) VALUES
   (1, 1, 28, 13, 34, 4),
   (1, 2, 23, 0, 57, 3),
@@ -10148,7 +10130,7 @@ INSERT INTO BERBAGI_REPLAY (klan_id, urutan_chat, deskripsi_tambahan, pertarunga
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- ============================================================
+-- 
 -- SUMMARY
 -- ARENA             : 20
 -- RARITY_STATS      : 20
@@ -10166,4 +10148,4 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- PESAN_BIASA       : 745
 -- PERMINTAAN_DONASI : 295
 -- BERBAGI_REPLAY    : 179
--- ============================================================
+-- 
